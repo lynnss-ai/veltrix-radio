@@ -1,0 +1,43 @@
+{
+  "name": "veltrix-radio",
+  "version": "0.1.0",
+  "description": "Terminal-based radio player for SomaFM, Radio Paradise and more — built with Ink + mpv on Bun",
+  "author": "Lynn <lynnss.codeai@gmail.com>",
+  "lastUpdated": "2026-05-09",
+  "homepage": "https://github.com/lynnss-ai/veltrix-radio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lynnss-ai/veltrix-radio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lynnss-ai/veltrix-radio/issues"
+  },
+  "type": "module",
+  "bin": {
+    "veltrix-radio": "./src/cli.tsx",
+    "vradio": "./src/cli.tsx"
+  },
+  "scripts": {
+    "start": "bun src/cli.tsx",
+    "dev": "bun --watch src/cli.tsx",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/cli.tsx --outfile dist/cli.js --target=bun --minify"
+  },
+  "dependencies": {
+    "cfonts": "^3.3.1",
+    "ink": "^5.0.1",
+    "ink-select-input": "^6.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
+    "string-width": "^8.2.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/react": "^18.3.12",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
