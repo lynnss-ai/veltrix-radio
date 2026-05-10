@@ -4,6 +4,11 @@ import type { Station } from '../stations.js';
 import type { Messages } from '../i18n/index.js';
 import type { Theme } from '../theme/index.js';
 import { padEndVisual } from '../util/pad.js';
+import { CONTENT_WIDTH } from '../util/layout.js';
+
+// 行格式: cursor(1) + ' ' + playMark(1) + ' ' + key(12) + ' ' + name(34) + ' ' + genre(?) = 52 + genre
+// genre 列填齐到 CONTENT_WIDTH - 52,让每行右边界都一致,不再有锯齿
+const GENRE_PAD = CONTENT_WIDTH - 52;
 
 interface Props {
   messages: Messages;
@@ -27,7 +32,7 @@ function StationList({ messages: m, theme, stations, cursorIndex, currentKey }: 
         const baseColor = s.custom ? theme.custom : undefined;
         return (
           <Text key={s.key} color={isCursor ? theme.cursor : baseColor} bold={isCursor}>
-            {cursorMark} {playMark} {padEndVisual(s.key, 12)} {padEndVisual(name, 34)} <Text color={theme.meta} bold={false}>{s.genre}</Text>
+            {cursorMark} {playMark} {padEndVisual(s.key, 12)} {padEndVisual(name, 34)} <Text color={theme.meta} bold={false}>{padEndVisual(s.genre, GENRE_PAD)}</Text>
           </Text>
         );
       })}

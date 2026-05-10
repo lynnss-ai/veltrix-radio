@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import net from 'node:net';
-import { existsSync } from 'node:fs';
+import { existsSync, unlinkSync } from 'node:fs';
 
 // mpv 在 Windows 上 winget 安装后不一定加到 PATH —— 做 fallback 探测
 const MPV_FALLBACK_WIN = [
@@ -37,6 +37,10 @@ export interface MpvMetadata {
 }
 
 export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused';
+
+// mpv softvol 上限。app 默认走系统音量(SystemVolume),mpv 这边保持不衰减;
+// 当系统音量不可用(Windows / 缺 pactl)时,作为 fallback 回退到 mpv softvol
+export const MAX_VOLUME = 100;
 
 interface MpvIpcCommand {
   command: unknown[];
@@ -74,17 +78,26 @@ export class MpvPlayer extends EventEmitter {
   private state: PlaybackState = 'idle';
   private currentVolume = 70;
 
-  constructor() {
+  constructor(options: { initialVolume?: number } = {}) {
     super();
     // pid 隔离:同时跑多个实例也不会撞 pipe 名
     this.ipcPath = process.platform === 'win32'
       ? `\\\\.\\pipe\\veltrix-radio-${process.pid}`
       : `/tmp/veltrix-radio-${process.pid}.sock`;
+    if (options.initialVolume !== undefined) {
+      this.currentVolume = Math.max(0, Math.min(MAX_VOLUME, options.initialVolume));
+    }
   }
 
   async start(): Promise<void> {
     if (this.process) return;
     const mpvBin = findMpvBinary();
+
+    // pid 复用 + 上次崩溃残留:同名 socket 文件已存在会让 mpv bind 失败后立刻退出
+    if (process.platform !== 'win32' && existsSync(this.ipcPath)) {
+      try { unlinkSync(this.ipcPath); } catch { /* 残留权限异常时让 mpv 报错出来 */ }
+    }
+
     const args = [
       '--idle=yes',
       '--no-terminal',
@@ -212,8 +225,10 @@ export class MpvPlayer extends EventEmitter {
         if (!rmsStr) break;
         const db = parseFloat(rmsStr);
         if (!Number.isFinite(db)) break;
-        // -60 dB 视为静默,0 dB 视为最大;归一化到 [0, 1]
-        const normalized = Math.max(0, Math.min(1, (db + 60) / 60));
+        // 网络电台 RMS 多在 -25~-10 dB,旧 (db+60)/60 把这段挤进 [0.5, 0.85]
+        // → 4 行波形里下面两行永远占满,看不出动态。改成 -30 dB 当静音,-5 dB 当满值
+        // → -25 dB ≈ 0.2、-15 dB ≈ 0.6、-10 dB ≈ 0.8、-5 dB ≈ 1.0,可视范围铺满 4 行
+        const normalized = Math.max(0, Math.min(1, (db + 30) / 25));
         this.emit('level', normalized);
         break;
       }
@@ -238,7 +253,7 @@ export class MpvPlayer extends EventEmitter {
   }
 
   changeVolume(delta: number): void {
-    const next = Math.max(0, Math.min(100, this.currentVolume + delta));
+    const next = Math.max(0, Math.min(MAX_VOLUME, this.currentVolume + delta));
     this.currentVolume = next;
     this.send({ command: ['set_property', 'volume', next] });
   }

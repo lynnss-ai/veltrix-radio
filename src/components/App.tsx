@@ -7,12 +7,16 @@ import { getMessages } from '../i18n/index.js';
 import type { LocaleCode } from '../i18n/index.js';
 import { readConfig, updateConfig } from '../config.js';
 import { getTheme, type ThemeName } from '../theme/index.js';
+import { createSystemVolume } from '../util/system-volume.js';
+import { BOX_WIDTH } from '../util/layout.js';
 import StationList from './StationList.js';
 import NowPlaying from './NowPlaying.js';
 import LanguageModal from './LanguageModal.js';
 import ThemeModal from './ThemeModal.js';
 
-const PAGE_SIZE = 16;
+const PAGE_SIZE = 10;
+// 模块级单例 — process.platform 不会变,createSystemVolume 也只是装一组闭包,创建一次足够
+const sysVol = createSystemVolume();
 
 interface Props {
   initialStationKey?: string;
@@ -42,8 +46,17 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
   const [current, setCurrent] = useState<Station | null>(null);
   const [state, setState] = useState<PlaybackState>('idle');
   const [title, setTitle] = useState<string>('');
-  const [volume, setVolume] = useState<number>(70);
+  // 系统音量驱动模式:UI 初始就显示当前系统音量,fallback 模式回到 mpv 默认 70
+  const [volume, setVolume] = useState<number>(() => {
+    if (sysVol.supported) {
+      const cur = sysVol.get();
+      if (cur !== null) return cur;
+    }
+    return 70;
+  });
   const [error, setError] = useState<string>('');
+  // 退出时还原用户原始系统音量,避免关 app 后系统被静音
+  const originalSysVolRef = useRef<number | null>(null);
 
   // levelRef 持有最新 audio RMS [0, 1] — 用 ref 而非 state 避免 mpv 高频推送触发 re-render
   const levelRef = useRef(0);
@@ -82,12 +95,20 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
 
   useEffect(() => {
     let mounted = true;
-    const p = new MpvPlayer();
+    // 系统音量驱动时:mpv softvol 固定 100(不衰减),整段控制权交给系统;
+    // fallback 时:沿用 mpv 默认 70(保持旧行为)
+    const p = new MpvPlayer({ initialVolume: sysVol.supported ? 100 : 70 });
     playerRef.current = p;
+
+    if (sysVol.supported) {
+      const orig = sysVol.get();
+      if (orig !== null) originalSysVolRef.current = orig;
+    }
 
     p.on('state', (s) => { if (mounted) setState(s); });
     p.on('metadata', (md) => { if (mounted) setTitle(md.title ?? ''); });
-    p.on('volume', (v) => { if (mounted) setVolume(v); });
+    // 系统音量模式下 mpv 推 100 是 noise — 忽略,UI 跟系统走
+    p.on('volume', (v) => { if (mounted && !sysVol.supported) setVolume(v); });
     p.on('level', (v) => { levelRef.current = v; });
     p.on('error', (e) => { if (mounted) setError(e.message); });
     p.on('exit', () => { if (mounted) setError(getMessages(locale).ui.errors.mpvExited); });
@@ -109,6 +130,9 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
     return () => {
       mounted = false;
       p.stop().catch(() => { /* swallow on unmount */ });
+      // 还原系统音量(若改过)
+      const orig = originalSysVolRef.current;
+      if (sysVol.supported && orig !== null) sysVol.set(orig);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStationKey]);
@@ -132,6 +156,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
         setCursor(next);
         setCurrent(s);
         setTitle('');
+        setError('');
         playerRef.current?.play(s.url);
       }
       return;
@@ -144,6 +169,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
         setCursor(prev);
         setCurrent(s);
         setTitle('');
+        setError('');
         playerRef.current?.play(s.url);
       }
       return;
@@ -181,12 +207,29 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
       } else {
         setCurrent(s);
         setTitle('');
+        setError('');
         playerRef.current?.play(s.url);
       }
     } else if (input === '+' || input === '=') {
-      playerRef.current?.changeVolume(+5);
+      if (sysVol.supported) {
+        setVolume((v) => {
+          const next = Math.min(100, v + 5);
+          sysVol.set(next);
+          return next;
+        });
+      } else {
+        playerRef.current?.changeVolume(+5);
+      }
     } else if (input === '-' || input === '_') {
-      playerRef.current?.changeVolume(-5);
+      if (sysVol.supported) {
+        setVolume((v) => {
+          const next = Math.max(0, v - 5);
+          sysVol.set(next);
+          return next;
+        });
+      } else {
+        playerRef.current?.changeVolume(-5);
+      }
     }
   }, { isActive: !showLangModal && !showThemeModal && !searchActive });
 
@@ -232,7 +275,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
   }
 
   return (
-    <Box flexDirection="column" borderStyle={theme.borderStyle} borderColor={theme.border} paddingX={1}>
+    <Box flexDirection="column" borderStyle={theme.borderStyle} borderColor={theme.border} paddingX={1} width={BOX_WIDTH}>
       <NowPlaying
         messages={m}
         theme={theme}
@@ -263,6 +306,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
                   setCursor(idx >= 0 ? idx : 0);
                   setCurrent(s);
                   setTitle('');
+                  setError('');
                   playerRef.current?.play(s.url);
                 }
                 setSearchActive(false);

@@ -2,26 +2,20 @@ import { useMemo } from 'react';
 import { Box, Text } from 'ink';
 import Spinner from 'ink-spinner';
 import { render as renderCfonts } from 'cfonts';
-import stringWidth from 'string-width';
 import type { Station } from '../stations.js';
 import type { PlaybackState } from '../player.js';
 import type { Messages } from '../i18n/index.js';
 import type { Theme } from '../theme/index.js';
 import { author, version, homepage } from '../about.js';
+import { CONTENT_WIDTH } from '../util/layout.js';
 import Marquee from './Marquee.js';
 import Waveform from './Waveform.js';
 
-const TRACK_MARQUEE_WIDTH = 50;
-const WAVEFORM_WIDTH = 60;
+// "Track:   " 前缀的可见宽度 — 5(Track) + 1(:) + 3(空格) = 9
+const TRACK_LABEL_WIDTH = 9;
+const TRACK_MARQUEE_WIDTH = CONTENT_WIDTH - TRACK_LABEL_WIDTH;
+const WAVEFORM_WIDTH = CONTENT_WIDTH;
 const BANNER_TEXT = 'veltrix-radio';
-
-// 用 cfonts 算 banner 视觉宽度,byLine 跟它一致才能跟最右字符对齐
-// tiny font:2 行高、~50 cells 宽 — 比 simple(5 行 / ~75 cells)紧凑得多
-// string-width 会 strip ANSI 码,得到真实 cell 宽度
-const BANNER_WIDTH = (() => {
-  const result = renderCfonts(BANNER_TEXT, { font: 'tiny', space: false }) as { string: string };
-  return Math.max(...result.string.split('\n').map((l: string) => stringWidth(l)));
-})();
 
 interface Props {
   messages: Messages;
@@ -38,15 +32,20 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
   const stationName = station ? (station.custom?.name ?? m.stations[station.key]?.name ?? station.key) : '';
   // 直接 cfonts 渲染 + trim 首尾换行,用 useMemo 缓存
   // 不缓存的话:Marquee 每 250ms 触发 NowPlaying re-render,cfonts.render 每次都跑 → CPU 抖动 → 跑马灯卡顿
+  // 字体由 theme.bannerFont 决定 — 限制在 ≤ 6 行 / ≤ 78 cells,避开 tiny 字体的 ▀/▄ 半块在
+  // Menlo/SF Mono 上的留缝问题。每个主题选了最契合自己气质的字体(默认 slick / 赛博 pallet 等)
   const bannerString = useMemo(() => {
-    const r = renderCfonts(BANNER_TEXT, { font: 'tiny', space: false, colors: theme.bannerColors }) as { string: string };
+    const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, colors: theme.bannerColors }) as { string: string };
     return r.string.replace(/^\n+|\n+$/g, '');
-  }, [theme.bannerColors]);
+  }, [theme.bannerColors, theme.bannerFont]);
   return (
     <Box flexDirection="column">
-      <Text>{bannerString}</Text>
-      {/* byLine 容器宽度固定为 banner 宽度,内部 flex-end 把文字推到右边 → 跟 banner 最右字符对齐 */}
-      <Box width={BANNER_WIDTH} justifyContent="flex-end" marginTop={1}>
+      {/* banner 居中:cfonts tiny 渲染宽度 ~50,在 CONTENT_WIDTH=64 里两侧各留 ~7 cell */}
+      <Box width={CONTENT_WIDTH} justifyContent="center">
+        <Text>{bannerString}</Text>
+      </Box>
+      {/* by-line 右对齐到 CONTENT_WIDTH — 跟下方 track / waveform / 频道行的右边界一致 */}
+      <Box width={CONTENT_WIDTH} justifyContent="flex-end" marginTop={1}>
         <Text color={theme.meta}>
           by <Text color={theme.metaValue}>{author}</Text>
           {' · v'}<Text color={theme.metaValue}>{version}</Text>
@@ -90,7 +89,7 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
         <Text color={theme.meta}>   {m.ui.volume}: </Text>
         <Text color={theme.metaValue}>{volume.toString().padStart(3)}</Text>
         <Text>{' '}</Text>
-        <VolumeBar value={volume} total={10} theme={theme} />
+        <VolumeBar value={volume} total={20} theme={theme} />
       </Text>
       {error ? <Text color={theme.error}>! {error}</Text> : null}
     </Box>
@@ -107,7 +106,7 @@ function StateBadge({ state, messages: m, theme }: { state: PlaybackState; messa
   return <Text color={colorMap[state]}>{m.ui.states[state]}</Text>;
 }
 
-// 音量进度条 — 实心 █ 已填充, 空心 ░ 剩余
+// 音量进度条 — 实心 █ 已填充, 空心 ░ 剩余。total 选 20 跟 5% 步长对齐(每格对应一次 +/- 按键)
 function VolumeBar({ value, total, theme }: { value: number; total: number; theme: Theme }) {
   const filled = Math.max(0, Math.min(total, Math.round((value / 100) * total)));
   const empty = total - filled;
