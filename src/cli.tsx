@@ -39,7 +39,7 @@ function printList(): void {
     const desc = s.custom?.desc ?? m.stations[s.key]?.desc ?? '';
     const mark = s.custom ? '*' : ' '; // 自定义频道前缀 *
     process.stdout.write(
-      `${mark} ${padEndVisual(s.key, 12)} ${padEndVisual(name, 34)} ${padEndVisual(s.genre, 11)} ${desc}\n`,
+      `${mark} ${padEndVisual(s.key, 14)} ${padEndVisual(name, 34)} ${padEndVisual(s.genre, 11)} ${desc}\n`,
     );
   }
 }

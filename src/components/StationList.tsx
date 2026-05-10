@@ -3,12 +3,17 @@ import { Box, Text } from 'ink';
 import type { Station } from '../stations.js';
 import type { Messages } from '../i18n/index.js';
 import type { Theme } from '../theme/index.js';
-import { padEndVisual } from '../util/pad.js';
+import { padEndVisual, truncateVisual } from '../util/pad.js';
 import { CONTENT_WIDTH } from '../util/layout.js';
 
-// 行格式: cursor(1) + ' ' + playMark(1) + ' ' + key(12) + ' ' + name(34) + ' ' + genre(?) = 52 + genre
-// genre 列填齐到 CONTENT_WIDTH - 52,让每行右边界都一致,不再有锯齿
-const GENRE_PAD = CONTENT_WIDTH - 52;
+// 行格式: cursor(1) + ' ' + playMark(1) + ' ' + key(14) + ' ' + name(44) + ' ' + genre(?) = 64 + genre
+// key 列 14 能放下最长的 missioncontrol / fip-nouveautes(14)和 swiss-classic(13)
+// name 列 44 能放下大部分 zh/ko 翻译(最长 zh "沙拉律动经典 (SomaFM Groove Salad Classic)" = 42 cells)
+// ja 翻译有些更长(最长 50 cells),会被 truncateVisual 截断 — 否则行溢出 CONTENT_WIDTH 触发 ink 折行,
+// 折行尾部只剩空白看着像"空行"
+const KEY_PAD = 14;
+const NAME_PAD = 44;
+const GENRE_PAD = CONTENT_WIDTH - KEY_PAD - NAME_PAD - 6;  // 6 = 2 marks + 4 spaces
 
 interface Props {
   messages: Messages;
@@ -32,7 +37,7 @@ function StationList({ messages: m, theme, stations, cursorIndex, currentKey }: 
         const baseColor = s.custom ? theme.custom : undefined;
         return (
           <Text key={s.key} color={isCursor ? theme.cursor : baseColor} bold={isCursor}>
-            {cursorMark} {playMark} {padEndVisual(s.key, 12)} {padEndVisual(name, 34)} <Text color={theme.meta} bold={false}>{padEndVisual(s.genre, GENRE_PAD)}</Text>
+            {cursorMark} {playMark} {padEndVisual(s.key, KEY_PAD)} {padEndVisual(truncateVisual(name, NAME_PAD), NAME_PAD)} <Text color={theme.meta} bold={false}>{padEndVisual(s.genre, GENRE_PAD)}</Text>
           </Text>
         );
       })}
