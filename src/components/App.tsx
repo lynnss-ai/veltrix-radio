@@ -5,7 +5,7 @@ import { mergeWithCustom, type Station } from '../stations.js';
 import { MpvPlayer, type PlaybackState } from '../player.js';
 import { getMessages } from '../i18n/index.js';
 import type { LocaleCode } from '../i18n/index.js';
-import { readConfig, updateConfig } from '../config.js';
+import { updateConfig, type ConfigCustomStation } from '../config.js';
 import { getTheme, type ThemeName } from '../theme/index.js';
 import { createSystemVolume } from '../util/system-volume.js';
 import { BOX_WIDTH } from '../util/layout.js';
@@ -22,9 +22,10 @@ interface Props {
   initialStationKey?: string;
   initialLocale: LocaleCode;
   initialTheme: ThemeName;
+  initialCustomStations?: ConfigCustomStation[];
 }
 
-export default function App({ initialStationKey, initialLocale, initialTheme }: Props) {
+export default function App({ initialStationKey, initialLocale, initialTheme, initialCustomStations }: Props) {
   const { exit } = useApp();
   const playerRef = useRef<MpvPlayer | null>(null);
 
@@ -36,7 +37,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [stations] = useState<Station[]>(() => mergeWithCustom(readConfig().customStations));
+  const [stations] = useState<Station[]>(() => mergeWithCustom(initialCustomStations));
 
   const [cursor, setCursor] = useState<number>(() => {
     if (!initialStationKey) return 0;
@@ -58,9 +59,16 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
   // 退出时还原用户原始系统音量,避免关 app 后系统被静音
   const originalSysVolRef = useRef<number | null>(null);
 
-  // levelRef 持有最新 audio RMS [0, 1] — 用 ref 而非 state 避免 mpv 高频推送触发 re-render
-  const levelRef = useRef(0);
-  const getLevel = useCallback(() => levelRef.current, []);
+  // RMS / Peak 双通道 [0, 1] — 用 ref 而非 state 避免 mpv 50Hz 推送触发 re-render
+  // Peak 攒最大值(player 推送频率比 Waveform 轮询快),getLevel 读完即清,避免漏掉短促的瞬态
+  const rmsRef = useRef(0);
+  const peakRef = useRef(0);
+  const getLevel = useCallback(() => {
+    const rms = rmsRef.current;
+    const peak = peakRef.current;
+    peakRef.current = 0;  // drain
+    return { rms, peak };
+  }, []);
 
   const m = getMessages(locale);
 
@@ -109,7 +117,10 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
     p.on('metadata', (md) => { if (mounted) setTitle(md.title ?? ''); });
     // 系统音量模式下 mpv 推 100 是 noise — 忽略,UI 跟系统走
     p.on('volume', (v) => { if (mounted && !sysVol.supported) setVolume(v); });
-    p.on('level', (v) => { levelRef.current = v; });
+    p.on('level', (rms, peak) => {
+      rmsRef.current = rms;
+      peakRef.current = Math.max(peakRef.current, peak);
+    });
     p.on('error', (e) => { if (mounted) setError(e.message); });
     p.on('exit', () => { if (mounted) setError(getMessages(locale).ui.errors.mpvExited); });
 
@@ -130,9 +141,12 @@ export default function App({ initialStationKey, initialLocale, initialTheme }: 
     return () => {
       mounted = false;
       p.stop().catch(() => { /* swallow on unmount */ });
-      // 还原系统音量(若改过)
+      // 还原系统音量(若改过)— set 是 throttled,这里立刻 flush 保证 trailing 写入不被进程退出吞掉
       const orig = originalSysVolRef.current;
-      if (sysVol.supported && orig !== null) sysVol.set(orig);
+      if (sysVol.supported && orig !== null) {
+        sysVol.set(orig);
+        sysVol.flush();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStationKey]);

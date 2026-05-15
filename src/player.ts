@@ -58,7 +58,7 @@ export interface MpvPlayerEvents {
   metadata: (md: MpvMetadata) => void;
   state: (s: PlaybackState) => void;
   volume: (v: number) => void;
-  level: (level: number) => void;          // 实时音频 RMS,归一化 [0, 1]
+  level: (rms: number, peak: number) => void;  // 实时 RMS + Peak,归一化 [0, 1]
   error: (e: Error) => void;
   exit: (code: number | null) => void;
 }
@@ -117,8 +117,8 @@ export class MpvPlayer extends EventEmitter {
 
     await this.connectWithRetry();
     // 动态加 audio filter 拿实时电平 — 失败不影响主播放,只是 Waveform 拿不到数据
-    // length=0.05 给 50ms RMS 窗口;reset=1 让 metadata 是 instantaneous 值而非累积
-    this.send({ command: ['af', 'add', '@aud:lavfi=[astats=metadata=1:reset=1:length=0.05]'] });
+    // length=0.02 给 20ms 窗口(50Hz 更新率)→ Peak 能抓鼓点等瞬态,RMS 也跟得上;reset=1 让 metadata 是 instantaneous 值
+    this.send({ command: ['af', 'add', '@aud:lavfi=[astats=metadata=1:reset=1:length=0.02]'] });
     // 订阅关键属性,获得推送式更新
     this.send({ command: ['observe_property', 1, 'metadata'] });
     this.send({ command: ['observe_property', 2, 'pause'] });
@@ -212,24 +212,30 @@ export class MpvPlayer extends EventEmitter {
         break;
       }
       case 'af-metadata/aud': {
-        // astats 输出 metadata 包括 lavfi.astats.Overall.RMS_level (dB,负数,0=最大,-∞=静默)
+        // astats 输出 metadata 包括 RMS_level 和 Peak_level(都是 dB,负数,0=最大,-∞=静默)
         // mpv 可能返回 dict 或 string 两种形态,都处理
         const data = msg.data;
         let rmsStr: string | undefined;
+        let peakStr: string | undefined;
         if (data && typeof data === 'object') {
-          rmsStr = (data as Record<string, string>)['lavfi.astats.Overall.RMS_level'];
+          const d = data as Record<string, string>;
+          rmsStr = d['lavfi.astats.Overall.RMS_level'];
+          peakStr = d['lavfi.astats.Overall.Peak_level'];
         } else if (typeof data === 'string') {
-          const m = data.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/);
-          if (m && m[1]) rmsStr = m[1];
+          const mr = data.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/);
+          const mp = data.match(/lavfi\.astats\.Overall\.Peak_level=(-?[\d.]+)/);
+          if (mr && mr[1]) rmsStr = mr[1];
+          if (mp && mp[1]) peakStr = mp[1];
         }
         if (!rmsStr) break;
-        const db = parseFloat(rmsStr);
-        if (!Number.isFinite(db)) break;
-        // 网络电台 RMS 多在 -25~-10 dB,旧 (db+60)/60 把这段挤进 [0.5, 0.85]
-        // → 4 行波形里下面两行永远占满,看不出动态。改成 -30 dB 当静音,-5 dB 当满值
-        // → -25 dB ≈ 0.2、-15 dB ≈ 0.6、-10 dB ≈ 0.8、-5 dB ≈ 1.0,可视范围铺满 4 行
-        const normalized = Math.max(0, Math.min(1, (db + 30) / 25));
-        this.emit('level', normalized);
+        const rmsDb = parseFloat(rmsStr);
+        if (!Number.isFinite(rmsDb)) break;
+        // 网络电台 RMS 多在 -25~-10 dB:-30 dB 当静音,-5 dB 当满值
+        const rms = Math.max(0, Math.min(1, (rmsDb + 30) / 25));
+        // Peak 比 RMS 高 5~15 dB,放宽到 -25 ~ 0 dB 区间防止顶点常年顶到天花板
+        const peakDb = peakStr ? parseFloat(peakStr) : rmsDb;
+        const peak = Math.max(0, Math.min(1, (Number.isFinite(peakDb) ? peakDb : rmsDb) / 25 + 1));
+        this.emit('level', rms, peak);
         break;
       }
     }

@@ -176,5 +176,12 @@ if (argv[0] === 'play') {
 }
 
 const initialTheme = cfg.theme ?? 'default';
-const { waitUntilExit } = render(<App initialStationKey={initialKey} initialLocale={locale} initialTheme={initialTheme} />);
+const { waitUntilExit } = render(
+  <App
+    initialStationKey={initialKey}
+    initialLocale={locale}
+    initialTheme={initialTheme}
+    initialCustomStations={cfg.customStations}
+  />,
+);
 waitUntilExit().catch(() => { /* render exits cleanly via useApp().exit() */ });

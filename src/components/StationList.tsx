@@ -26,7 +26,10 @@ interface Props {
 function StationList({ messages: m, theme, stations, cursorIndex, currentKey }: Props) {
   return (
     <Box flexDirection="column">
-      <Text color={theme.meta} bold>{m.ui.stationsHeader}</Text>
+      <Text>
+        <Text color={theme.meta} bold>{m.ui.stationsHeader}</Text>
+        <Text color={theme.meta}> ({m.ui.pickHint})</Text>
+      </Text>
       {stations.map((s, i) => {
         const isCursor = i === cursorIndex;
         const isPlaying = s.key === currentKey;

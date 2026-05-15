@@ -25,7 +25,7 @@ interface Props {
   title: string;
   volume: number;
   error: string;
-  getLevel?: () => number;
+  getLevel?: () => { rms: number; peak: number };
 }
 
 export default function NowPlaying({ messages: m, theme, station, state, title, volume, error, getLevel }: Props) {
@@ -35,12 +35,16 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
   // 字体由 theme.bannerFont 决定 — 限制在 ≤ 6 行 / ≤ 78 cells,避开 tiny 字体的 ▀/▄ 半块在
   // Menlo/SF Mono 上的留缝问题。每个主题选了最契合自己气质的字体(默认 slick / 赛博 pallet 等)
   const bannerString = useMemo(() => {
-    const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, colors: theme.bannerColors }) as { string: string };
-    return r.string.replace(/^\n+|\n+$/g, '');
+    // letterSpacing=2 把 shade 字体从 63 撑到 76 cells,几乎贴满 CONTENT_WIDTH=78
+    // shade 用 █(letter)+ ░(背景)两种字符,把 █→⣿(全填盲文点)、░→空格 后,banner 跟波形同款"点阵"质感
+    const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, letterSpacing: 2, colors: theme.bannerColors }) as { string: string };
+    return r.string
+      .replace(/^\n+|\n+$/g, '')
+      .replace(/█/g, '⣿')
+      .replace(/░/g, ' ');
   }, [theme.bannerColors, theme.bannerFont]);
   return (
     <Box flexDirection="column">
-      {/* banner 居中:cfonts tiny 渲染宽度 ~50,在 CONTENT_WIDTH=64 里两侧各留 ~7 cell */}
       <Box width={CONTENT_WIDTH} justifyContent="center">
         <Text>{bannerString}</Text>
       </Box>
@@ -77,20 +81,30 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
           </Text>
         </>
       ) : (
-        <Text color={theme.meta}>{m.ui.pickHint}</Text>
+        // 没选频道时留两行空 — 保持跟 station+track 两行布局一致,pickHint 已移到 StationList 头部
+        <>
+          <Text> </Text>
+          <Text> </Text>
+        </>
       )}
       {/* Waveform 紧贴 Track 下方,无 marginTop — 滚动文本 + 波形视觉成一组 */}
       <Box>
-        <Waveform active={state === 'playing'} width={WAVEFORM_WIDTH} theme={theme} getLevel={getLevel} />
+        <Waveform active={state === 'playing'} frozen={state === 'paused'} width={WAVEFORM_WIDTH} theme={theme} getLevel={getLevel} />
       </Box>
-      <Text>
-        <Text color={theme.meta}>{m.ui.state}:   </Text>
-        <StateBadge state={state} messages={m} theme={theme} />
-        <Text color={theme.meta}>   {m.ui.volume}: </Text>
-        <Text color={theme.metaValue}>{volume.toString().padStart(3)}</Text>
-        <Text>{' '}</Text>
-        <VolumeBar value={volume} total={20} theme={theme} />
-      </Text>
+      {/* 状态居中 + 音量靠右:左右两侧 flexGrow 弹性撑开,音量段用 🔊 图标代替"音量"文字 */}
+      <Box width={CONTENT_WIDTH}>
+        <Box flexGrow={1} flexBasis={0} />
+        <Box>
+          <StateBadge state={state} messages={m} theme={theme} />
+        </Box>
+        <Box flexGrow={1} flexBasis={0} justifyContent="flex-end">
+          <Text>
+            <Text color={theme.metaValue}>{volume.toString().padStart(3)}</Text>
+            <Text>{' '}</Text>
+            <VolumeBar value={volume} total={20} theme={theme} />
+          </Text>
+        </Box>
+      </Box>
       {error ? <Text color={theme.error}>! {error}</Text> : null}
     </Box>
   );

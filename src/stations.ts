@@ -93,6 +93,29 @@ export const stations: Station[] = [
   // === Listen.moe (动漫流行) (2) ===
   { key: 'listen-jpop',    genre: 'jpop',        url: 'https://listen.moe/stream' },
   { key: 'listen-kpop',    genre: 'kpop',        url: 'https://listen.moe/kpop/stream' },
+  // === 香港 RTHK 港台 (6) ===
+  { key: 'rthk1',          genre: 'news',        url: 'https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8' },
+  { key: 'rthk2',          genre: 'cpop',        url: 'https://rthkaudio2-lh.akamaihd.net/i/radio2_1@355865/master.m3u8' },
+  { key: 'rthk3',          genre: 'news',        url: 'https://rthkaudio3-lh.akamaihd.net/i/radio3_1@355866/master.m3u8' },
+  { key: 'rthk4',          genre: 'classical',   url: 'https://rthkaudio4-lh.akamaihd.net/i/radio4_1@355867/master.m3u8' },
+  { key: 'rthk5',          genre: 'eclectic',    url: 'https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8' },
+  { key: 'rthk-pth',       genre: 'news',        url: 'https://rthkaudio6-lh.akamaihd.net/i/radiopth_1@355869/master.m3u8' },
+  // === 台湾华语台 (9) ===
+  { key: 'icrt',           genre: 'pop',         url: 'https://n27a-eu.rcs.revma.com/nkdfurztxp3vv' },
+  { key: 'rti',            genre: 'news',        url: 'https://streamak0138.akamaized.net/live0138lh-mbm9/_definst_/rti3/chunklist.m3u8' },
+  { key: 'bcc-news',       genre: 'news',        url: 'https://n03.rcs.revma.com/78fm9wyy2tzuv' },
+  { key: 'bcc-music',      genre: 'cpop',        url: 'https://n03.rcs.revma.com/ndk05tyy2tzuv' },
+  { key: 'bcc-pop',        genre: 'cpop',        url: 'https://n03.rcs.revma.com/aw9uqyxy2tzuv' },
+  { key: 'hit-fm',         genre: 'cpop',        url: 'http://202.39.43.67:1935/live/RA000036/chunklist.m3u8' },
+  { key: 'pbs-tw',         genre: 'news',        url: 'http://stream.pbs.gov.tw:1935/live/TPS/playlist.m3u8' },
+  { key: 'ufo-tw',         genre: 'eclectic',    url: 'https://n10.rcs.revma.com/em90w4aeewzuv' },
+  { key: 'news98',         genre: 'news',        url: 'https://n17a-eu.rcs.revma.com/pntx1639ntzuv' },
+  // === 马来西亚华语台 (5) ===
+  { key: '988fm',          genre: 'cpop',        url: 'https://28103.live.streamtheworld.com/988_FMAAC.aac' },
+  { key: 'ai-fm',          genre: 'cpop',        url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/AI_FMAAC.aac' },
+  { key: 'melody-fm',      genre: 'cpop',        url: 'https://n09.rcs.revma.com/2u1n6dtbv4uvv/9_11l86ncot7z1w02/playlist.m3u8' },
+  { key: 'cityplus',       genre: 'news',        url: 'https://stream.rcs.revma.com/9ykdmcawe1bwv' },
+  { key: 'eight-fm',       genre: 'cpop',        url: 'https://stream.rcs.revma.com/qp0xrd9mtd3vv' },
 ];
 
 export function findStation(key: string): Station | undefined {

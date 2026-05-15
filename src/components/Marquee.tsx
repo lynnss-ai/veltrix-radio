@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Text } from 'ink';
 import stringWidth from 'string-width';
 
@@ -22,10 +22,19 @@ export default function Marquee({
   alwaysScroll = false,
 }: Props) {
   const [offset, setOffset] = useState(0);
-  const visualWidth = stringWidth(text);
-  const needsScroll = alwaysScroll || visualWidth > width;
-  const fullText = needsScroll ? text + separator : text;
-  const cycleLen = fullText.length;
+
+  // text/width/separator/alwaysScroll 在一首歌内都不变,但 setOffset 每 250ms 触发 re-render —
+  // 不缓存的话 stringWidth + fullText.repeat 也跟着每 250ms 重跑(CJK 标题 stringWidth 不便宜,
+  // repeat 还分配整个 buffer)。一次性算好,re-render 时只剩 slice
+  const { needsScroll, cycleLen, buffer } = useMemo(() => {
+    const visualWidth = stringWidth(text);
+    const ns = alwaysScroll || visualWidth > width;
+    const fullText = ns ? text + separator : text;
+    const cl = fullText.length;
+    if (!ns) return { needsScroll: false, cycleLen: cl, buffer: '' };
+    const repeats = Math.max(2, Math.ceil((width + cl) / cl) + 1);
+    return { needsScroll: true, cycleLen: cl, buffer: fullText.repeat(repeats) };
+  }, [text, width, separator, alwaysScroll]);
 
   useEffect(() => {
     // text 切换时立即归零,避免显示中段
@@ -41,9 +50,6 @@ export default function Marquee({
     return <Text color={color}>{text}</Text>;
   }
 
-  // 文本短时单纯 doubled 不够,得 repeat 到能 slice 出 width 字符
-  const repeats = Math.max(2, Math.ceil((width + cycleLen) / cycleLen) + 1);
-  const buffer = fullText.repeat(repeats);
   const slice = buffer.slice(offset, offset + width);
   return <Text color={color}>{slice}</Text>;
 }

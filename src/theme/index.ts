@@ -29,6 +29,9 @@ export interface Theme {
   statePlaying: string;
   statePaused: string;
   error: string;
+  // 波形点阵 — 6 色 truecolor 调色板,Waveform 按 ci % 6 循环
+  // 用 hex 而不是派生主题色,是为了拿到主题命名色之外的高饱和中间色,色彩比单纯派生丰富
+  waveColors: string[];
   // modal 选择器显示用
   nativeName: string;
   description: string;
@@ -53,6 +56,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'green',
     statePaused: 'yellow',
     error: 'red',
+    waveColors: ['#00d4ff', '#00aaff', '#0088ff', '#5599ff', '#00ffaa', '#66ddff'],
     nativeName: 'Default',
     description: 'Calm cyan accent',
   },
@@ -74,6 +78,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'magentaBright',
     statePaused: 'yellowBright',
     error: 'redBright',
+    waveColors: ['#ff00ff', '#ff44dd', '#00ffff', '#66ddff', '#ffff00', '#ff0099'],
     nativeName: 'Cyberpunk',
     description: 'Neon magenta + cyan',
   },
@@ -95,6 +100,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'whiteBright',
     statePaused: 'gray',
     error: 'red',                          // 错误依然红 — 唯一保留色相,避免漏报
+    waveColors: ['#ffffff', '#dddddd', '#bbbbbb', '#999999', '#cccccc', '#eeeeee'],
     nativeName: 'Mono',
     description: 'Black & white minimalist',
   },
@@ -116,6 +122,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'yellowBright',
     statePaused: 'yellow',
     error: 'redBright',
+    waveColors: ['#ffbb00', '#ff9900', '#ffdd44', '#ff7700', '#ffaa44', '#ffcc66'],
     nativeName: 'Amber',
     description: 'Retro CRT amber terminal',
   },
@@ -137,6 +144,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'greenBright',
     statePaused: 'yellow',
     error: 'redBright',
+    waveColors: ['#00cc55', '#22dd88', '#44ffaa', '#00aacc', '#66ffdd', '#00ee77'],
     nativeName: 'Forest',
     description: 'Mossy green + cyan',
   },
@@ -158,6 +166,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'yellowBright',
     statePaused: 'red',
     error: 'magentaBright',                // 暖色已占满 red/yellow,error 走品红才跳得出
+    waveColors: ['#ff3300', '#ff6600', '#ff9900', '#ffcc00', '#ff0066', '#ff5500'],
     nativeName: 'Sunset',
     description: 'Warm red + amber',
   },
@@ -179,6 +188,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'cyanBright',
     statePaused: 'blue',
     error: 'redBright',
+    waveColors: ['#0066ff', '#0088ff', '#00aaff', '#00cccc', '#44ddff', '#0099dd'],
     nativeName: 'Ocean',
     description: 'Deep blue + cyan',
   },
@@ -200,6 +210,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'greenBright',
     statePaused: 'green',
     error: 'redBright',                    // 唯一非绿色相,避免漏报
+    waveColors: ['#00ff00', '#00cc00', '#66ff66', '#00aa00', '#33ff33', '#88ff88'],
     nativeName: 'Matrix',
     description: 'Digital rain green',
   },
@@ -221,6 +232,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'magentaBright',
     statePaused: 'red',
     error: 'redBright',
+    waveColors: ['#ff0066', '#ff3399', '#ff66bb', '#cc0044', '#ff0099', '#ee3377'],
     nativeName: 'Rose',
     description: 'Warm pink + crimson',
   },
@@ -242,6 +254,7 @@ export const themes: Record<ThemeName, Theme> = {
     statePlaying: 'magentaBright',
     statePaused: 'blue',
     error: 'redBright',
+    waveColors: ['#aa44ff', '#7755ff', '#bb77ff', '#5588ff', '#cc88ff', '#9966dd'],
     nativeName: 'Lavender',
     description: 'Cool purple + blue',
   },
