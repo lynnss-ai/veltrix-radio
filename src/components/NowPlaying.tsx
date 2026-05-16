@@ -25,7 +25,7 @@ interface Props {
   title: string;
   volume: number;
   error: string;
-  getLevel?: () => { rms: number; peak: number };
+  getLevel?: () => number;
 }
 
 export default function NowPlaying({ messages: m, theme, station, state, title, volume, error, getLevel }: Props) {
@@ -35,12 +35,15 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
   // 字体由 theme.bannerFont 决定 — 限制在 ≤ 6 行 / ≤ 78 cells,避开 tiny 字体的 ▀/▄ 半块在
   // Menlo/SF Mono 上的留缝问题。每个主题选了最契合自己气质的字体(默认 slick / 赛博 pallet 等)
   const bannerString = useMemo(() => {
-    // letterSpacing=2 把 shade 字体从 63 撑到 76 cells,几乎贴满 CONTENT_WIDTH=78
-    // shade 用 █(letter)+ ░(背景)两种字符,把 █→⣿(全填盲文点)、░→空格 后,banner 跟波形同款"点阵"质感
-    const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, letterSpacing: 2, colors: theme.bannerColors }) as { string: string };
+    // shade 字体 ls=1(默认)→ 63 cells × 8 行,在 CONTENT_WIDTH=78 里居中,两侧各约 7 cell 余白
+    // shade 输出 █(笔画)+ ░(背景);映射 █→⣿(全填盲文)、░→空格 → 跟波形同款"小点点拼出来"的质感
+    // ▀ ▄ 是 tiny / 其它字体可能用的半块字符,留着以备主题切回这些字体时仍能正确渲染
+    const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, colors: theme.bannerColors }) as { string: string };
     return r.string
       .replace(/^\n+|\n+$/g, '')
       .replace(/█/g, '⣿')
+      .replace(/▀/g, '⠛')
+      .replace(/▄/g, '⣤')
       .replace(/░/g, ' ');
   }, [theme.bannerColors, theme.bannerFont]);
   return (

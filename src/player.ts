@@ -58,7 +58,7 @@ export interface MpvPlayerEvents {
   metadata: (md: MpvMetadata) => void;
   state: (s: PlaybackState) => void;
   volume: (v: number) => void;
-  level: (rms: number, peak: number) => void;  // 实时 RMS + Peak,归一化 [0, 1]
+  level: (level: number) => void;          // 实时音频 RMS,归一化 [0, 1]
   error: (e: Error) => void;
   exit: (code: number | null) => void;
 }
@@ -212,30 +212,22 @@ export class MpvPlayer extends EventEmitter {
         break;
       }
       case 'af-metadata/aud': {
-        // astats 输出 metadata 包括 RMS_level 和 Peak_level(都是 dB,负数,0=最大,-∞=静默)
+        // astats 输出 metadata 包括 lavfi.astats.Overall.RMS_level (dB,负数,0=最大,-∞=静默)
         // mpv 可能返回 dict 或 string 两种形态,都处理
         const data = msg.data;
         let rmsStr: string | undefined;
-        let peakStr: string | undefined;
         if (data && typeof data === 'object') {
-          const d = data as Record<string, string>;
-          rmsStr = d['lavfi.astats.Overall.RMS_level'];
-          peakStr = d['lavfi.astats.Overall.Peak_level'];
+          rmsStr = (data as Record<string, string>)['lavfi.astats.Overall.RMS_level'];
         } else if (typeof data === 'string') {
-          const mr = data.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/);
-          const mp = data.match(/lavfi\.astats\.Overall\.Peak_level=(-?[\d.]+)/);
-          if (mr && mr[1]) rmsStr = mr[1];
-          if (mp && mp[1]) peakStr = mp[1];
+          const m = data.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/);
+          if (m && m[1]) rmsStr = m[1];
         }
         if (!rmsStr) break;
-        const rmsDb = parseFloat(rmsStr);
-        if (!Number.isFinite(rmsDb)) break;
-        // 网络电台 RMS 多在 -25~-10 dB:-30 dB 当静音,-5 dB 当满值
-        const rms = Math.max(0, Math.min(1, (rmsDb + 30) / 25));
-        // Peak 比 RMS 高 5~15 dB,放宽到 -25 ~ 0 dB 区间防止顶点常年顶到天花板
-        const peakDb = peakStr ? parseFloat(peakStr) : rmsDb;
-        const peak = Math.max(0, Math.min(1, (Number.isFinite(peakDb) ? peakDb : rmsDb) / 25 + 1));
-        this.emit('level', rms, peak);
+        const db = parseFloat(rmsStr);
+        if (!Number.isFinite(db)) break;
+        // 网络电台 RMS 多在 -25~-10 dB:-30 dB 当静音,-5 dB 当满值 → 可视范围铺满 4 行
+        const normalized = Math.max(0, Math.min(1, (db + 30) / 25));
+        this.emit('level', normalized);
         break;
       }
     }

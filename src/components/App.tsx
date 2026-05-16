@@ -59,16 +59,9 @@ export default function App({ initialStationKey, initialLocale, initialTheme, in
   // 退出时还原用户原始系统音量,避免关 app 后系统被静音
   const originalSysVolRef = useRef<number | null>(null);
 
-  // RMS / Peak 双通道 [0, 1] — 用 ref 而非 state 避免 mpv 50Hz 推送触发 re-render
-  // Peak 攒最大值(player 推送频率比 Waveform 轮询快),getLevel 读完即清,避免漏掉短促的瞬态
-  const rmsRef = useRef(0);
-  const peakRef = useRef(0);
-  const getLevel = useCallback(() => {
-    const rms = rmsRef.current;
-    const peak = peakRef.current;
-    peakRef.current = 0;  // drain
-    return { rms, peak };
-  }, []);
+  // levelRef 持有最新 audio RMS [0, 1] — 用 ref 而非 state 避免 mpv 高频推送触发 re-render
+  const levelRef = useRef(0);
+  const getLevel = useCallback(() => levelRef.current, []);
 
   const m = getMessages(locale);
 
@@ -117,10 +110,7 @@ export default function App({ initialStationKey, initialLocale, initialTheme, in
     p.on('metadata', (md) => { if (mounted) setTitle(md.title ?? ''); });
     // 系统音量模式下 mpv 推 100 是 noise — 忽略,UI 跟系统走
     p.on('volume', (v) => { if (mounted && !sysVol.supported) setVolume(v); });
-    p.on('level', (rms, peak) => {
-      rmsRef.current = rms;
-      peakRef.current = Math.max(peakRef.current, peak);
-    });
+    p.on('level', (v) => { levelRef.current = v; });
     p.on('error', (e) => { if (mounted) setError(e.message); });
     p.on('exit', () => { if (mounted) setError(getMessages(locale).ui.errors.mpvExited); });
 

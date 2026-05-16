@@ -12,7 +12,7 @@ export interface Theme {
   // banner / 边框
   border: string;
   bannerColors: string[];                  // BigText 渐变(单色就传 1 个)
-  bannerFont: BannerFont;                  // cfonts 字体(当前所有主题统一 shade,实心块无横线)
+  bannerFont: BannerFont;                  // cfonts 字体(当前所有主题统一 shade,8 行高,经 █→⣿ ░→空 替换后呈盲文点阵)
   borderStyle: 'round' | 'double' | 'single' | 'classic' | 'bold';
   // 列表导航
   cursor: string;                          // 光标行色
