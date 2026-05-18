@@ -126,6 +126,10 @@ export class MpvPlayer extends EventEmitter {
     this.process.on('error', (err) => this.emit('error', err));
 
     await this.connectWithRetry();
+    // 跨台响度归一(轻度):各源码率/制作电平差异大,切台不再忽大忽小。
+    // 放在滤镜链最前,@aud 测的是归一后信号 → 波形仪表也随之稳定。
+    // g=41 平滑增益变化(少"抽气"感)、m=7 限制最大增益(避免极安静 ambient 被放大成噪声)
+    this.send({ command: ['af', 'add', '@norm:lavfi=[dynaudnorm=f=400:g=41:p=0.9:m=7]'] });
     // 动态加 audio filter 拿实时电平 — 失败不影响主播放,只是 Waveform 拿不到数据
     // length=0.02 给 20ms 窗口(50Hz 更新率)→ Peak 能抓鼓点等瞬态,RMS 也跟得上;reset=1 让 metadata 是 instantaneous 值
     this.send({ command: ['af', 'add', '@aud:lavfi=[astats=metadata=1:reset=1:length=0.02]'] });
