@@ -1,7 +1,10 @@
 // 频道元数据 — 全部为公开免费 stream,无需注册、无广告。
 // 名称/描述按语言走 i18n.stations[key],这里只放跨语言不变的字段。
-// SomaFM stream URL 格式: https://ice1.somafm.com/<channel-id>-128-mp3
-// 改动前可拉 https://somafm.com/channels.json 验证 channel-id
+// 音质策略(2026-05 起):优先各台官方提供的最高码率源。
+//   SomaFM   → 官方 .pls(highest,256/320k MP3),mpv 自动解析播放列表
+//   Radio Paradise → FLAC 无损(Ogg 封装)
+//   FIP/Radio France → hifi.aac(192k AAC,优于旧 midfi 128k MP3)
+// SomaFM 改动前可拉 https://somafm.com/channels.json 取 highest playlist 验证
 
 export interface Station {
   key: string;
@@ -12,87 +15,87 @@ export interface Station {
 }
 
 export const stations: Station[] = [
-  // === SomaFM 已收录 (18) ===
-  { key: 'groove',         genre: 'chill',       url: 'https://ice1.somafm.com/groovesalad-128-mp3' },
-  { key: 'drone',          genre: 'ambient',     url: 'https://ice1.somafm.com/dronezone-128-mp3' },
-  { key: 'deepspace',      genre: 'ambient',     url: 'https://ice1.somafm.com/deepspaceone-128-mp3' },
-  { key: 'lush',           genre: 'electronic',  url: 'https://ice1.somafm.com/lush-128-mp3' },
-  { key: 'fluid',          genre: 'electronic',  url: 'https://ice1.somafm.com/fluid-128-mp3' },
-  { key: 'defcon',         genre: 'tech',        url: 'https://ice1.somafm.com/defcon-128-mp3' },
-  { key: 'beatblender',    genre: 'electronic',  url: 'https://ice1.somafm.com/beatblender-128-mp3' },
-  { key: 'sonicuni',       genre: 'eclectic',    url: 'https://ice1.somafm.com/sonicuniverse-128-mp3' },
-  { key: 'indiepop',       genre: 'indie',       url: 'https://ice1.somafm.com/indiepop-128-mp3' },
-  { key: 'u80s',           genre: 'retro',       url: 'https://ice1.somafm.com/u80s-128-mp3' },
-  { key: 'secretagent',    genre: 'lounge',      url: 'https://ice1.somafm.com/secretagent-128-mp3' },
-  { key: 'seventies',      genre: 'rock',        url: 'https://ice1.somafm.com/seventies-128-mp3' },
-  { key: 'bootliquor',     genre: 'country',     url: 'https://ice1.somafm.com/bootliquor-128-mp3' },
-  { key: 'folkfwd',        genre: 'folk',        url: 'https://ice1.somafm.com/folkfwd-128-mp3' },
-  { key: 'thistle',        genre: 'folk',        url: 'https://ice1.somafm.com/thistle-128-mp3' },
-  { key: 'metal',          genre: 'metal',       url: 'https://ice1.somafm.com/metal-128-mp3' },
-  { key: 'reggae',         genre: 'reggae',      url: 'https://ice1.somafm.com/reggae-128-mp3' },
-  { key: 'bossa',          genre: 'world',       url: 'https://ice1.somafm.com/bossa-128-mp3' },
-  // === SomaFM 新加 (27)— 来自官方 channels.json ===
-  { key: 'poptron',        genre: 'alternative', url: 'https://ice1.somafm.com/poptron-128-mp3' },
-  { key: '7soul',          genre: 'oldies',      url: 'https://ice1.somafm.com/7soul-128-mp3' },
-  { key: 'doomed',         genre: 'ambient',     url: 'https://ice1.somafm.com/doomed-128-mp3' },
-  { key: 'thetrip',        genre: 'electronic',  url: 'https://ice1.somafm.com/thetrip-128-mp3' },
-  { key: 'suburbsofgoa',   genre: 'world',       url: 'https://ice1.somafm.com/suburbsofgoa-128-mp3' },
-  { key: 'chillits',       genre: 'chill',       url: 'https://ice1.somafm.com/chillits-128-mp3' },
-  { key: 'illstreet',      genre: 'lounge',      url: 'https://ice1.somafm.com/illstreet-128-mp3' },
-  { key: 'vaporwaves',     genre: 'vaporwave',   url: 'https://ice1.somafm.com/vaporwaves-128-mp3' },
-  { key: 'missioncontrol', genre: 'ambient',     url: 'https://ice1.somafm.com/missioncontrol-128-mp3' },
-  { key: 'dz2',            genre: 'ambient',     url: 'https://ice1.somafm.com/dronezone2-128-mp3' },
-  { key: 'cliqhop',        genre: 'electronic',  url: 'https://ice1.somafm.com/cliqhop-128-mp3' },
-  { key: 'digitalis',      genre: 'electronic',  url: 'https://ice1.somafm.com/digitalis-128-mp3' },
-  { key: 'dubstep',        genre: 'electronic',  url: 'https://ice1.somafm.com/dubstep-128-mp3' },
-  { key: 'spacestation',   genre: 'electronic',  url: 'https://ice1.somafm.com/spacestation-128-mp3' },
-  { key: 'gsclassic',      genre: 'chill',       url: 'https://ice1.somafm.com/gsclassic-128-mp3' },
-  { key: 'groovesalad2',   genre: 'chill',       url: 'https://ice1.somafm.com/groovesalad2-128-mp3' },
-  { key: 'covers',         genre: 'eclectic',    url: 'https://ice1.somafm.com/covers-128-mp3' },
-  { key: 'brfm',           genre: 'eclectic',    url: 'https://ice1.somafm.com/brfm-128-mp3' },
-  { key: 'synphaera',      genre: 'ambient',     url: 'https://ice1.somafm.com/synphaera-128-mp3' },
-  { key: 'insound',        genre: 'oldies',      url: 'https://ice1.somafm.com/insound-128-mp3' },
-  { key: 'sfinsf',         genre: 'spoken',      url: 'https://ice1.somafm.com/sfinsf-128-mp3' },
-  { key: 'tikitime',       genre: 'world',       url: 'https://ice1.somafm.com/tikitime-128-mp3' },
-  { key: 'n5md',           genre: 'electronic',  url: 'https://ice1.somafm.com/n5md-128-mp3' },
-  { key: 'darkzone',       genre: 'ambient',     url: 'https://ice1.somafm.com/darkzone-128-mp3' },
-  { key: 'sf1033',         genre: 'news',        url: 'https://ice1.somafm.com/sf1033-128-mp3' },
-  { key: 'somalive',       genre: 'specials',    url: 'https://ice1.somafm.com/live-128-mp3' },
-  { key: 'somaspecials',   genre: 'specials',    url: 'https://ice1.somafm.com/specials-128-mp3' },
-  // === Radio Paradise (4) ===
-  { key: 'rp',             genre: 'eclectic',    url: 'https://stream.radioparadise.com/mp3-192' },
-  { key: 'rp-mellow',      genre: 'eclectic',    url: 'https://stream.radioparadise.com/mellow-192' },
-  { key: 'rp-rock',        genre: 'rock',        url: 'https://stream.radioparadise.com/rock-192' },
-  { key: 'rp-global',      genre: 'eclectic',    url: 'https://stream.radioparadise.com/global-192' },
-  // === FIP (Radio France 旗下,公开 stream) (11) ===
-  { key: 'fip',            genre: 'eclectic',    url: 'https://icecast.radiofrance.fr/fip-midfi.mp3' },
-  { key: 'fip-rock',       genre: 'rock',        url: 'https://icecast.radiofrance.fr/fiprock-midfi.mp3' },
-  { key: 'fip-jazz',       genre: 'jazz',        url: 'https://icecast.radiofrance.fr/fipjazz-midfi.mp3' },
-  { key: 'fip-groove',     genre: 'electronic',  url: 'https://icecast.radiofrance.fr/fipgroove-midfi.mp3' },
-  { key: 'fip-pop',        genre: 'pop',         url: 'https://icecast.radiofrance.fr/fippop-midfi.mp3' },
-  { key: 'fip-electro',    genre: 'electronic',  url: 'https://icecast.radiofrance.fr/fipelectro-midfi.mp3' },
-  { key: 'fip-world',      genre: 'world',       url: 'https://icecast.radiofrance.fr/fipworld-midfi.mp3' },
-  { key: 'fip-reggae',     genre: 'reggae',      url: 'https://icecast.radiofrance.fr/fipreggae-midfi.mp3' },
-  { key: 'fip-hiphop',     genre: 'hiphop',      url: 'https://icecast.radiofrance.fr/fiphiphop-midfi.mp3' },
-  { key: 'fip-nouveautes', genre: 'pop',         url: 'https://icecast.radiofrance.fr/fipnouveautes-midfi.mp3' },
-  { key: 'france-inter',   genre: 'news',        url: 'https://icecast.radiofrance.fr/franceinter-midfi.mp3' },
+  // === SomaFM 已收录 (18) — highest .pls(256/320k)===
+  { key: 'groove',         genre: 'chill',       url: 'https://api.somafm.com/groovesalad256.pls' },
+  { key: 'drone',          genre: 'ambient',     url: 'https://api.somafm.com/dronezone256.pls' },
+  { key: 'deepspace',      genre: 'ambient',     url: 'https://api.somafm.com/deepspaceone.pls' },
+  { key: 'lush',           genre: 'electronic',  url: 'https://api.somafm.com/lush.pls' },
+  { key: 'fluid',          genre: 'electronic',  url: 'https://api.somafm.com/fluid.pls' },
+  { key: 'defcon',         genre: 'tech',        url: 'https://api.somafm.com/defcon256.pls' },
+  { key: 'beatblender',    genre: 'electronic',  url: 'https://api.somafm.com/beatblender.pls' },
+  { key: 'sonicuni',       genre: 'eclectic',    url: 'https://api.somafm.com/sonicuniverse256.pls' },
+  { key: 'indiepop',       genre: 'indie',       url: 'https://api.somafm.com/indiepop.pls' },
+  { key: 'u80s',           genre: 'retro',       url: 'https://api.somafm.com/u80s256.pls' },
+  { key: 'secretagent',    genre: 'lounge',      url: 'https://api.somafm.com/secretagent.pls' },
+  { key: 'seventies',      genre: 'rock',        url: 'https://api.somafm.com/seventies320.pls' },
+  { key: 'bootliquor',     genre: 'country',     url: 'https://api.somafm.com/bootliquor320.pls' },
+  { key: 'folkfwd',        genre: 'folk',        url: 'https://api.somafm.com/folkfwd.pls' },
+  { key: 'thistle',        genre: 'folk',        url: 'https://api.somafm.com/thistle.pls' },
+  { key: 'metal',          genre: 'metal',       url: 'https://api.somafm.com/metal.pls' },
+  { key: 'reggae',         genre: 'reggae',      url: 'https://api.somafm.com/reggae256.pls' },
+  { key: 'bossa',          genre: 'world',       url: 'https://api.somafm.com/bossa256.pls' },
+  // === SomaFM 新加 (27)===
+  { key: 'poptron',        genre: 'alternative', url: 'https://api.somafm.com/poptron.pls' },
+  { key: '7soul',          genre: 'oldies',      url: 'https://api.somafm.com/7soul.pls' },
+  { key: 'doomed',         genre: 'ambient',     url: 'https://api.somafm.com/doomed256.pls' },
+  { key: 'thetrip',        genre: 'electronic',  url: 'https://api.somafm.com/thetrip.pls' },
+  { key: 'suburbsofgoa',   genre: 'world',       url: 'https://api.somafm.com/suburbsofgoa.pls' },
+  { key: 'chillits',       genre: 'chill',       url: 'https://api.somafm.com/chillits256.pls' },
+  { key: 'illstreet',      genre: 'lounge',      url: 'https://api.somafm.com/illstreet.pls' },
+  { key: 'vaporwaves',     genre: 'vaporwave',   url: 'https://api.somafm.com/vaporwaves.pls' },
+  { key: 'missioncontrol', genre: 'ambient',     url: 'https://api.somafm.com/missioncontrol.pls' },
+  { key: 'dz2',            genre: 'ambient',     url: 'https://api.somafm.com/dz2.pls' },
+  { key: 'cliqhop',        genre: 'electronic',  url: 'https://api.somafm.com/cliqhop256.pls' },
+  { key: 'digitalis',      genre: 'electronic',  url: 'https://api.somafm.com/digitalis256.pls' },
+  { key: 'dubstep',        genre: 'electronic',  url: 'https://api.somafm.com/dubstep256.pls' },
+  { key: 'spacestation',   genre: 'electronic',  url: 'https://api.somafm.com/spacestation320.pls' },
+  { key: 'gsclassic',      genre: 'chill',       url: 'https://api.somafm.com/gsclassic.pls' },
+  { key: 'groovesalad2',   genre: 'chill',       url: 'https://api.somafm.com/groovesalad2256.pls' },
+  { key: 'covers',         genre: 'eclectic',    url: 'https://api.somafm.com/covers.pls' },
+  { key: 'brfm',           genre: 'eclectic',    url: 'https://api.somafm.com/brfm.pls' },
+  { key: 'synphaera',      genre: 'ambient',     url: 'https://api.somafm.com/synphaera256.pls' },
+  { key: 'insound',        genre: 'oldies',      url: 'https://api.somafm.com/insound256.pls' },
+  { key: 'sfinsf',         genre: 'spoken',      url: 'https://api.somafm.com/sfinsf.pls' },
+  { key: 'tikitime',       genre: 'world',       url: 'https://api.somafm.com/tikitime256.pls' },
+  { key: 'n5md',           genre: 'electronic',  url: 'https://api.somafm.com/n5md.pls' },
+  { key: 'darkzone',       genre: 'ambient',     url: 'https://api.somafm.com/darkzone256.pls' },
+  { key: 'sf1033',         genre: 'news',        url: 'https://api.somafm.com/sf1033.pls' },
+  { key: 'somalive',       genre: 'specials',    url: 'https://api.somafm.com/live.pls' },
+  { key: 'somaspecials',   genre: 'specials',    url: 'https://api.somafm.com/specials.pls' },
+  // === Radio Paradise (4) — FLAC 无损 ===
+  { key: 'rp',             genre: 'eclectic',    url: 'https://stream.radioparadise.com/flac' },
+  { key: 'rp-mellow',      genre: 'eclectic',    url: 'https://stream.radioparadise.com/mellow-flac' },
+  { key: 'rp-rock',        genre: 'rock',        url: 'https://stream.radioparadise.com/rock-flac' },
+  { key: 'rp-global',      genre: 'eclectic',    url: 'https://stream.radioparadise.com/global-flac' },
+  // === FIP (Radio France 旗下,公开 stream) (11) — hifi 192k AAC ===
+  { key: 'fip',            genre: 'eclectic',    url: 'https://icecast.radiofrance.fr/fip-hifi.aac' },
+  { key: 'fip-rock',       genre: 'rock',        url: 'https://icecast.radiofrance.fr/fiprock-hifi.aac' },
+  { key: 'fip-jazz',       genre: 'jazz',        url: 'https://icecast.radiofrance.fr/fipjazz-hifi.aac' },
+  { key: 'fip-groove',     genre: 'electronic',  url: 'https://icecast.radiofrance.fr/fipgroove-hifi.aac' },
+  { key: 'fip-pop',        genre: 'pop',         url: 'https://icecast.radiofrance.fr/fippop-hifi.aac' },
+  { key: 'fip-electro',    genre: 'electronic',  url: 'https://icecast.radiofrance.fr/fipelectro-hifi.aac' },
+  { key: 'fip-world',      genre: 'world',       url: 'https://icecast.radiofrance.fr/fipworld-hifi.aac' },
+  { key: 'fip-reggae',     genre: 'reggae',      url: 'https://icecast.radiofrance.fr/fipreggae-hifi.aac' },
+  { key: 'fip-hiphop',     genre: 'hiphop',      url: 'https://icecast.radiofrance.fr/fiphiphop-hifi.aac' },
+  { key: 'fip-nouveautes', genre: 'pop',         url: 'https://icecast.radiofrance.fr/fipnouveautes-hifi.aac' },
+  { key: 'france-inter',   genre: 'news',        url: 'https://icecast.radiofrance.fr/franceinter-hifi.aac' },
   // === NTS Radio (London) (2) ===
   { key: 'nts1',           genre: 'eclectic',    url: 'https://stream-relay-geo.ntslive.net/stream' },
   { key: 'nts2',           genre: 'eclectic',    url: 'https://stream-relay-geo.ntslive.net/stream2' },
-  // === 美国独立电台 (3) ===
-  { key: 'kexp',           genre: 'indie',       url: 'https://kexp-mp3-128.streamguys1.com/kexp128.mp3' },
+  // === 美国独立电台 (3) — KEXP 升 160k AAC ===
+  { key: 'kexp',           genre: 'indie',       url: 'https://kexp.streamguys1.com/kexp160.aac' },
   { key: 'kcrw-e24',       genre: 'eclectic',    url: 'https://kcrw.streamguys1.com/kcrw_192k_mp3_e24' },
   { key: 'wfmu',           genre: 'eclectic',    url: 'https://stream0.wfmu.org/freeform-128k.mp3' },
   // === 瑞士公共电台 (3) ===
   { key: 'swiss-pop',      genre: 'pop',         url: 'http://stream.srg-ssr.ch/m/rsp/mp3_128' },
   { key: 'swiss-classic',  genre: 'classical',   url: 'http://stream.srg-ssr.ch/m/rsc_de/mp3_128' },
   { key: 'swiss-jazz',     genre: 'jazz',        url: 'http://stream.srg-ssr.ch/m/rsj/mp3_128' },
-  // === 德国 Deutschlandfunk (2) ===
+  // === 德国 Deutschlandfunk (2) — 源仅 128k ===
   { key: 'dlf',            genre: 'news',        url: 'https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3' },
   { key: 'dlf-nova',       genre: 'news',        url: 'https://st03.sslstream.dlf.de/dlf/03/128/mp3/stream.mp3' },
-  // === Listen.moe (动漫流行) (2) ===
-  { key: 'listen-jpop',    genre: 'jpop',        url: 'https://listen.moe/stream' },
-  { key: 'listen-kpop',    genre: 'kpop',        url: 'https://listen.moe/kpop/stream' },
+  // === Listen.moe (动漫流行) (2) — Opus(同带宽优于 Vorbis)===
+  { key: 'listen-jpop',    genre: 'jpop',        url: 'https://listen.moe/opus' },
+  { key: 'listen-kpop',    genre: 'kpop',        url: 'https://listen.moe/kpop/opus' },
   // === 香港 RTHK 港台 (6) ===
   { key: 'rthk1',          genre: 'news',        url: 'https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8' },
   { key: 'rthk2',          genre: 'cpop',        url: 'https://rthkaudio2-lh.akamaihd.net/i/radio2_1@355865/master.m3u8' },

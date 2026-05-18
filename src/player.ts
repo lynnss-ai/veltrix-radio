@@ -106,6 +106,16 @@ export class MpvPlayer extends EventEmitter {
       '--no-config', // 避免用户全局 mpv.conf 干扰
       `--volume=${this.currentVolume}`,
       `--input-ipc-server=${this.ipcPath}`,
+      // 网络电台音质的主要瓶颈是抖动/欠载导致的卡顿爆音,而非编码本身。
+      // 加大缓冲 + 提前预读,网络波动时不断流;FLAC/192k 等高码率源尤其需要。
+      '--cache=yes',
+      '--cache-secs=30',
+      '--demuxer-max-bytes=64MiB',
+      '--demuxer-readahead-secs=20',
+      // 卡死时按超时重连,而非无限等待
+      '--network-timeout=10',
+      // 曲目/播放列表切换不留静音缝隙
+      '--gapless-audio=yes',
     ];
 
     this.process = spawn(mpvBin, args, { stdio: ['ignore', 'pipe', 'pipe'] });

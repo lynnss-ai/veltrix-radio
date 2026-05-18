@@ -1,9 +1,9 @@
 {
   "name": "veltrix-radio",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Terminal-based radio player for SomaFM, Radio Paradise and more — built with Ink + mpv on Bun",
   "author": "Lynn <lynnss.codeai@gmail.com>",
-  "lastUpdated": "2026-05-16",
+  "lastUpdated": "2026-05-18",
   "homepage": "https://github.com/lynnss-ai/veltrix-radio",
   "repository": {
     "type": "git",
