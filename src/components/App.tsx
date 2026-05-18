@@ -117,13 +117,17 @@ export default function App({ initialStationKey, initialLocale, initialTheme, in
     p.start()
       .then(() => {
         if (!mounted) return;
-        if (initialStationKey) {
-          const s = stations.find((x) => x.key === initialStationKey);
-          if (s) {
-            setCurrent(s);
-            setTitle('');
-            p.play(s.url);
-          }
+        // 显式 `play <key>` 优先;否则启动即随机选一个频道自动播放
+        const target = initialStationKey
+          ? stations.find((x) => x.key === initialStationKey)
+          : stations[Math.floor(Math.random() * stations.length)];
+        if (target) {
+          // 光标移到正在播放的频道,列表里高亮(启动时无搜索,cursor 即 stations 索引)
+          const idx = stations.findIndex((x) => x.key === target.key);
+          if (idx >= 0) setCursor(idx);
+          setCurrent(target);
+          setTitle('');
+          p.play(target.url);
         }
       })
       .catch((e: Error) => { if (mounted) setError(e.message); });

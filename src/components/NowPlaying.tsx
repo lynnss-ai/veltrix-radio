@@ -32,27 +32,34 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
   const stationName = station ? (station.custom?.name ?? m.stations[station.key]?.name ?? station.key) : '';
   // 直接 cfonts 渲染 + trim 首尾换行,用 useMemo 缓存
   // 不缓存的话:Marquee 每 250ms 触发 NowPlaying re-render,cfonts.render 每次都跑 → CPU 抖动 → 跑马灯卡顿
-  // 字体由 theme.bannerFont 决定 — 限制在 ≤ 6 行 / ≤ 78 cells,避开 tiny 字体的 ▀/▄ 半块在
-  // Menlo/SF Mono 上的留缝问题。每个主题选了最契合自己气质的字体(默认 slick / 赛博 pallet 等)
+  // 字体由 theme.bannerFont 决定 — shade 渲染 8 行,剔除首尾纯空白行后实际 5 行字形 / ≤ 78 cells,
+  // 避开 tiny 字体的 ▀/▄ 半块在 Menlo/SF Mono 上的留缝问题。当前所有主题统一 shade
   const bannerString = useMemo(() => {
     // shade 字体 ls=1(默认)→ 63 cells × 8 行,在 CONTENT_WIDTH=78 里居中,两侧各约 7 cell 余白
     // shade 输出 █(笔画)+ ░(背景);映射 █→⣿(全填盲文)、░→空格 → 跟波形同款"小点点拼出来"的质感
     // ▀ ▄ 是 tiny / 其它字体可能用的半块字符,留着以备主题切回这些字体时仍能正确渲染
     const r = renderCfonts(BANNER_TEXT, { font: theme.bannerFont, space: false, colors: theme.bannerColors }) as { string: string };
-    return r.string
+    const replaced = r.string
       .replace(/^\n+|\n+$/g, '')
       .replace(/█/g, '⣿')
       .replace(/▀/g, '⠛')
       .replace(/▄/g, '⣤')
       .replace(/░/g, ' ');
+    // shade 字体块自带首尾整行 ░(替换后变纯空格行),仅 trim 换行符删不掉它们;
+    // 不剔除的话 by-line 的 marginTop={1} 之上会多叠 2 行,视觉间距变成 3 行而非 1 行
+    const lines = replaced.split('\n');
+    while (lines.length && lines[0]!.trim() === '') lines.shift();
+    while (lines.length && lines[lines.length - 1]!.trim() === '') lines.pop();
+    return lines.join('\n');
   }, [theme.bannerColors, theme.bannerFont]);
   return (
     <Box flexDirection="column">
       <Box width={CONTENT_WIDTH} justifyContent="center">
         <Text>{bannerString}</Text>
       </Box>
-      {/* by-line 右对齐到 CONTENT_WIDTH — 跟下方 track / waveform / 频道行的右边界一致 */}
-      <Box width={CONTENT_WIDTH} justifyContent="flex-end" marginTop={1}>
+      {/* by-line 右对齐到 CONTENT_WIDTH — 跟下方 track / waveform / 频道行的右边界一致;
+          marginTop={0} 让 by-line 紧贴横幅字形,无空行间隔 */}
+      <Box width={CONTENT_WIDTH} justifyContent="flex-end" marginTop={0}>
         <Text color={theme.meta}>
           by <Text color={theme.metaValue}>{author}</Text>
           {' · v'}<Text color={theme.metaValue}>{version}</Text>
@@ -64,6 +71,8 @@ export default function NowPlaying({ messages: m, theme, station, state, title, 
           ) : null}
         </Text>
       </Box>
+      {/* by-line 与下方频道区的间距:2 空行 */}
+      <Text> </Text>
       <Text> </Text>
       {station ? (
         <>
